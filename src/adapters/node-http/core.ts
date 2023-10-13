@@ -79,7 +79,9 @@ export const createOpenApiNodeHttpHandler = <
     const path = normalizePath(url.pathname);
     const { procedure, pathInput } = getProcedure(method, path) ?? {};
 
-    req.params = pathInput;
+    if ('params' in req) {
+      req.params = pathInput;
+    }
 
     let input: any = undefined;
     let ctx: any = undefined;
