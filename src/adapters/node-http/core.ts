@@ -4,10 +4,6 @@ import {
   NodeHTTPRequest,
   NodeHTTPResponse,
 } from '@trpc/server/dist/adapters/node-http';
-import cloneDeep from 'lodash.clonedeep';
-import { ZodError, z } from 'zod';
-
-import { generateOpenApiDocument } from '../../generator';
 import {
   OpenApiErrorResponse,
   OpenApiMethod,
@@ -15,9 +11,9 @@ import {
   OpenApiRouter,
   OpenApiSuccessResponse,
 } from '../../types';
-import { acceptsRequestBody } from '../../utils/method';
-import { normalizePath } from '../../utils/path';
-import { getInputOutputParsers } from '../../utils/procedure';
+import { TRPC_ERROR_CODE_HTTP_STATUS, getErrorFromUnknown } from './errors';
+import { ZodError, z } from 'zod';
+import { getBody, getQuery } from './input';
 import {
   instanceofZodTypeCoercible,
   instanceofZodTypeLikeVoid,
@@ -25,9 +21,13 @@ import {
   unwrapZodType,
   zodSupportsCoerce,
 } from '../../utils/zod';
-import { TRPC_ERROR_CODE_HTTP_STATUS, getErrorFromUnknown } from './errors';
-import { getBody, getQuery } from './input';
+
+import { acceptsRequestBody } from '../../utils/method';
+import cloneDeep from 'lodash.clonedeep';
 import { createProcedureCache } from './procedures';
+import { generateOpenApiDocument } from '../../generator';
+import { getInputOutputParsers } from '../../utils/procedure';
+import { normalizePath } from '../../utils/path';
 
 export type CreateOpenApiNodeHttpHandlerOptions<
   TRouter extends OpenApiRouter,
@@ -78,6 +78,8 @@ export const createOpenApiNodeHttpHandler = <
     const url = new URL(reqUrl.startsWith('/') ? `http://127.0.0.1${reqUrl}` : reqUrl);
     const path = normalizePath(url.pathname);
     const { procedure, pathInput } = getProcedure(method, path) ?? {};
+
+    req.params = pathInput;
 
     let input: any = undefined;
     let ctx: any = undefined;
